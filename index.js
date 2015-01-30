@@ -22,6 +22,7 @@ var defaults = {
 var bootCfg = {
   dsRootDir: false,               // heres datasources.json but we merge it
   bootDirs: [],                   // directories holding boot scripts
+  bootScripts: [],                // boot scripts to execute
   modelSources: [],               // directories holding model files
   models: {},                     // model configuration
   dataSources: {},                // datasource configuration
@@ -37,8 +38,8 @@ function loadPackage(dir) {
   // add directory holding models
   bootCfg.modelSources.push(dir + '/models');
 
-  // add directory holding boot scripts
-  bootCfg.bootDirs.push(dir + '/boot');
+  // add boot scripts
+  bootCfg.bootScripts = bootCfg.bootScripts.concat(glob.sync(dir + '/boot/**/*.js'));
 
   // merge model-config.json
   _.merge(bootCfg.models, loadAndMergeConfig(dir + '/model-config.json'));
@@ -116,6 +117,11 @@ function run(opts) {
   // load local packages
   opts.localPackages.forEach(function(globPattern) {
     glob.sync(opts.appRootDir + '/' + globPattern).forEach(loadPackage);
+  });
+
+  // order bootScripts by filename
+  bootCfg.bootScripts = _.sortBy(bootCfg.bootScripts, function(file) {
+    return path.basename(file);
   });
 
   return bootCfg;
